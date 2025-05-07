@@ -7,7 +7,7 @@ import re
 import time
 import json
 import os
-from sample_data import get_sample_data  # Assuming this module exists
+from .sample_data import get_sample_data  # Assuming this module exists
 
 # Create Flask app and configure it
 app = Flask(__name__)
