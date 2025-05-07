@@ -7,7 +7,10 @@ import re
 import time
 import json
 import os
-from .sample_data import get_sample_data  # Assuming this module exists
+try:
+    from .sample_data import get_sample_data  # Assuming this module exists
+except:
+    from sample_data import get_sample_data
 
 # Create Flask app and configure it
 app = Flask(__name__)
