@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sri Lanka Election Results Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            border: none;
+        }
+        .card-header {
+            background-color: #002D62;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: bold;
+        }
+        .recent-result:hover {
+            background-color: #e9ecef;
+            cursor: pointer;
+        }
+        .winner-row {
+            background-color: rgba(40, 167, 69, 0.2);
+            font-weight: bold;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+        .footer {
+            margin-top: 30px;
+            padding: 20px 0;
+            background-color: #002D62;
+            color: white;
+        }
+        .badge-seats {
+            font-size: 1em;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        #refreshButton {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .spinner-border {
+            width: 1rem;
+            height: 1rem;
+        }
+        .update-time {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        #loadingSpinner {
+            display: none;
+        }
+        .party-color {
+            width: 15px;
+            height: 15px;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .progress {
+            height: 10px;
+            margin-top: 5px;
+        }
+        #chart {
+            min-height: 250px;
+            width: 100%;
+            max-height: 300px;
+        }
+        .party-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+        .custom-tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            display: none;
+        }
+        .summary-card {
+            background-color: #f8f9fa;
+            border-left: 5px solid #002D62;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        .summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        .district-filter {
+            margin-bottom: 15px;
+        }
+        .animation-fade {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .winner-label {
+            position: absolute;
+            top: -8px;
+            left: 10px;
+            background-color: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 1;
+        }
+        .party-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .party-symbol {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .seats-distribution {
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+        }
+        .seat-segment {
+            height: 100%;
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .alert-new-results {
+            margin-bottom: 15px;
+            animation: slideIn 0.5s ease-in-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .dark-mode {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .dark-mode .card {
+            background-color: #444;
+            color: #f8f9fa;
+        }
+        .dark-mode .card-header {
+            background-color: #212529;
+        }
+        .dark-mode .list-group-item {
+            background-color: #444;
+            color: #f8f9fa;
+            border-color: #666;
+        }
+        .dark-mode .list-group-item:hover {
+            background-color: #555;
+        }
+        .dark-mode .table {
+            color: #f8f9fa;
+        }
+        .dark-mode .table th {
+            background-color: #343a40;
+        }
+        .dark-mode .text-muted {
+            color: #adb5bd !important;
+        }
+        @media (max-width: 768px) {
+            .card-header {
+                font-size: 0.9rem;
+            }
+            .table {
+                font-size: 0.85rem;
+            }
+            .badge-seats {
+                font-size: 0.8em;
+                padding: 3px 7px;
+            }
+            #refreshButton {
+                bottom: 10px;
+                right: 10px;
+            }
+            .party-symbol {
+                width: 20px;
+                height: 20px;
+            }
+        }
+        /* 3D and Animation Enhancements */
+        :root {
+            --card-transition: 0.4s ease;
+            --hover-elevation: 15px;
+            --card-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            --card-hover-shadow: 0 15px 30px rgba(0,0,0,0.25);
+            --primary-color: #002D62;
+            --accent-color: #0056b3;
+        }
+        .card {
+            transform-style: preserve-3d;
+            transition: transform var(--card-transition), box-shadow var(--card-transition);
+            perspective: 1000px;
+            box-shadow: var(--card-shadow);
+        }
+        .card:hover {
+            transform: translateY(-8px) scale(1.01) rotateX(2deg);
+            box-shadow: var(--card-hover-shadow);
+        }
+        .party-symbol {
+            transition: transform 0.6s ease;
+            transform-style: preserve-3d;
+        }
+        .party-symbol:hover {
+            transform: rotate(360deg) scale(1.2);
+        }
+        #refreshButton, #manualRefresh, #autoSmsSwitch {
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        #refreshButton:hover, #manualRefresh:hover, #autoSmsSwitch:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.25);
+        }
+        #refreshButton:active, #manualRefresh:active, #autoSmsSwitch:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        .notification-badge {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+        .progress {
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            transform-style: preserve-3d;
+            perspective: 100px;
+        }
+        .progress-bar {
+            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+            transition: width 1s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            position: relative;
+        }
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+            transform: translateZ(1px);
+        }
+        .recent-result {
+            transition: all 0.4s ease;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+        .recent-result:hover {
+            transform: rotateX(5deg);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        #chart {
+            transition: all 0.5s ease;
+            transform-style: preserve-3d;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #chart:hover {
+            transform: scale(1.02) rotateY(2deg);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .winner-row {
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+        .navbar {
+            transform-style: preserve-3d;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .navbar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        @keyframes pageLoad {
+            0% { 
+                opacity: 0; 
+                transform: translateY(20px) scale(0.98); 
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+        .container {
+            animation: pageLoad 0.8s ease-out forwards;
+        }
+        .card-header {
+            position: relative;
+            overflow: hidden;
+        }
+        .card-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        .card:hover .card-header::after {
+            transform: translateX(100%);
+        }
+        #detailedResultsTable tbody tr {
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        #detailedResultsTable tbody tr:hover {
+            transform: scale(1.01) translateX(5px);
+            box-shadow: -5px 5px 10px rgba(0,0,0,0.05);
+            z-index: 5;
+        }
+        .badge-seats {
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .badge-seats:hover {
+            transform: translateZ(10px) scale(1.1);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+        #loadingSpinner {
+            animation: spin 1s linear infinite, float 2s ease-in-out infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .form-switch .form-check-input {
+            width: 2.5em;
+            height: 1.25em;
+            cursor: pointer;
+        }
+        .modal-content {
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .modal-content:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 rounded">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    <i class="fas fa-vote-yea me-2"></i>
+                    Sri Lanka Election Results
+                </a>
+                <div class="d-flex align-items-center">
+                      <a class="btn btn-sm btn-outline-light me-2" href="/news">
+                        <i class="fas fa-newspaper me-1"></i> News
+                    </a>
+                    <a class="btn btn-sm btn-outline-light me-2" href="/sms_campaign">
+                        <i class="fas fa-sms me-1"></i> SMS Campaign
+                    </a>
+                    <div class="form-check form-switch me-3">
+                        <input class="form-check-input" type="checkbox" id="autoSmsSwitch">
+                        <label class="form-check-label text-white" for="autoSmsSwitch">Auto SMS</label>
+                    </div>
+                    <span class="navbar-text me-3 update-time" id="lastUpdated">
+                        Last updated: {{ last_updated }}
+                    </span>
+                    <button class="btn btn-sm btn-outline-light" id="manualRefresh">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div id="alertContainer">
+            {% if error %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong>Warning:</strong> Using sample data due to connection issues ({{ error }})
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-chart-bar me-2"></i>Most Recent Result</span>
+                        <span id="mostRecentName" class="fs-6">{{ most_recent.local_government }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h5 id="lgName">{{ most_recent.local_government }}</h5>
+                                <p class="text-muted">
+                                    <i class="fas fa-map-marker-alt me-1"></i> District: <span id="districtName">{{ most_recent.district }}</span><br>
+                                    <i class="fas fa-clock me-1"></i> Published: <span id="timestamp">{{ most_recent.timestamp }}</span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <canvas id="chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="detailedResultsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Party</th>
+                                        <th>Votes</th>
+                                        <th>Share</th>
+                                        <th>Seats</th>
+                                        <th>Distribution</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for party in detailed_results %}
+                                    <tr class="{{ 'winner-row' if loop.index == 1 else '' }}">
+                                        <td>
+                                            <img src="{{ party.symbol_url }}" class="party-symbol" alt="{{ party.party_name }}">
+                                            <div class="party-color" style="background-color: {{ ['#d61a1a', '#00b7ff', '#00e600', '#ff8c00', '#c000c0', '#ffff00', '#00ffff', '#ff00ff', '#808080', '#a52a2a'][loop.index0 % 10] }}"></div>
+                                            {{ party.party_name }} 
+                                            <span class="text-muted">({{ party.party_abbr }})</span>
+                                        </td>
+                                        <td>{{ party.votes }}</td>
+                                        <td>{{ party.share }}</td>
+                                        <td>
+                                            <span class="badge bg-primary badge-seats">{{ party.seats }}</span>
+                                        </td>
+                                        <td style="width: 25%">
+                                            <div class="progress">
+                                                <div class="progress-bar" role="progressbar" 
+                                                    style="width: {{ party.share }}; background-color: {{ ['#d61a1a', '#00b7ff', '#00e600', '#ff8c00', '#c000c0', '#ffff00', '#00ffff', '#ff00ff', '#808080', '#a52a2a'][loop.index0 % 10] }}" 
+                                                    aria-valuenow="{{ party.share|replace('%', '') }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-list-alt me-2"></i>Recent Results
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group" id="recentResultsList">
+                            {% for result in recent_results %}
+                            <a href="#" class="list-group-item list-group-item-action recent-result" 
+                               data-district="{{ result.district }}" 
+                               data-lg-code="{{ result.lg_code }}" 
+                               data-lg-name="{{ result.lg_name }}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ result.local_government }}</h6>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="fas fa-map-marker-alt me-1"></i> {{ result.district }}<br>
+                                    <i class="fas fa-clock me-1"></i> {{ result.timestamp }}
+                                </small>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Auto-SMS Phone Numbers -->
+    <div class="modal fade" id="autoSmsModal" tabindex="-1" aria-labelledby="autoSmsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="autoSmsModalLabel">Auto-SMS Phone Numbers</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="autoSmsForm">
+                        <div class="mb-3">
+                            <label for="autoSmsNumbers" class="form-label">Phone Numbers (comma-separated, e.g., +94712345678,+94787654321)</label>
+                            <textarea class="form-control" id="autoSmsNumbers" name="autoSmsNumbers" rows="4" placeholder="Enter phone numbers in +94xxxxxxxxx format" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary rounded-circle p-3" id="refreshButton">
+        <span id="loadingSpinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        <i class="fas fa-sync-alt" id="refreshIcon"></i>
+    </button>
+
+    <footer class="footer mt-5">
+        <div class="container text-center">
+            <p>Sri Lanka Election Results Dashboard © 2025</p>
+            <p class="mb-0">Data sourced from results.elections.gov.lk</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        let myChart;
+        
+        function initChart(data) {
+            if (!Array.isArray(data) || data.length === 0) {
+                console.error('Invalid or empty data for chart');
+                return;
+            }
+            
+            const ctx = document.getElementById('chart').getContext('2d');
+            
+            if (myChart) {
+                myChart.destroy();
+            }
+            
+            const topParties = data.slice(0, 5);
+            const colors = ['#d61a1a', '#00b7ff', '#00e600', '#ff8c00', '#c000c0'];
+            
+            myChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: topParties.map(party => party.party_abbr),
+                    datasets: [{
+                        data: topParties.map(party => parseFloat(party.share.replace('%', ''))),
+                        backgroundColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const party = topParties[context.dataIndex];
+                                    return `${party.party_name}: ${party.share} (${party.seats} seats)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            initChart({{ detailed_results|tojson }});
+            
+            // Auto-SMS switch and modal handling
+            const autoSmsSwitch = $('#autoSmsSwitch');
+            const autoSmsModal = new bootstrap.Modal(document.getElementById('autoSmsModal'));
+            
+            // Load saved state
+            const savedAutoSms = localStorage.getItem('autoSmsEnabled') === 'true';
+            const savedNumbers = localStorage.getItem('autoSmsNumbers') || '';
+            autoSmsSwitch.prop('checked', savedAutoSms);
+            
+            // Toggle switch
+            autoSmsSwitch.on('change', function() {
+                if (this.checked) {
+                    $('#autoSmsNumbers').val(savedNumbers);
+                    autoSmsModal.show();
+                } else {
+                    localStorage.setItem('autoSmsEnabled', 'false');
+                }
+            });
+            
+            // Handle modal form submission
+            $('#autoSmsForm').on('submit', function(e) {
+                e.preventDefault();
+                const numbers = $('#autoSmsNumbers').val().trim();
+                const numberList = numbers.split(',').map(num => num.trim());
+                const validNumbers = numberList.filter(num => /^\+94\d{9}$/.test(num));
+                
+                if (validNumbers.length === 0) {
+                    $('#alertContainer').html(`
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error:</strong> Please enter valid phone numbers in +94xxxxxxxxx format
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `);
+                    return;
+                }
+                
+                localStorage.setItem('autoSmsEnabled', 'true');
+                localStorage.setItem('autoSmsNumbers', numbers);
+                autoSmsModal.hide();
+            });
+            
+            setInterval(refreshData, 30000);
+            
+            $('#refreshButton, #manualRefresh').click(function() {
+                refreshData();
+            });
+            
+            $(document).on('click', '.recent-result', function(e) {
+                e.preventDefault();
+                
+                const district = $(this).data('district');
+                const lgCode = $(this).data('lg-code');
+                const lgName = $(this).data('lg-name');
+                
+                loadDetailedResults(district, lgCode, lgName);
+            });
+        });
+        
+        function refreshData() {
+            $('#loadingSpinner').show();
+            $('#refreshIcon').hide();
+            
+            const autoSmsEnabled = localStorage.getItem('autoSmsEnabled') === 'true';
+            const numberList = localStorage.getItem('autoSmsNumbers') || '';
+            
+            $.ajax({
+                url: '/refresh_data',
+                type: 'GET',
+                data: {
+                    auto_sms: autoSmsEnabled,
+                    number_list: numberList
+                },
+                dataType: 'json',
+                success: function(data) {
+                    $('#lastUpdated').text('Last updated: ' + data.last_updated);
+                    
+                    $('#lgName').text(data.most_recent.local_government);
+                    $('#mostRecentName').text(data.most_recent.local_government);
+                    $('#districtName').text(data.most_recent.district);
+                    $('#timestamp').text(data.most_recent.timestamp);
+                    
+                    updateDetailedResultsTable(data.detailed_results);
+                    initChart(data.detailed_results);
+                    updateRecentResultsList(data.recent_results);
+                    
+                    if (data.new_results && data.new_results.length > 0) {
+                        $('.alert-new-results').remove();
+                        const newResultsText = data.new_results.join(', ');
+                        $('#alertContainer').prepend(`
+                            <div class="alert alert-success alert-dismissible fade show alert-new-results" role="alert">
+                                <strong>New Results!</strong> New election results available for: ${newResultsText}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `);
+                    }
+                    
+                    if (data.use_sample_data) {
+                        $('.alert-warning').remove();
+                        $('#alertContainer').append(`
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                <strong>Warning:</strong> Using sample data due to connection issues${data.error ? ' (' + data.error + ')' : ''}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `);
+                    } else {
+                        $('.alert-warning').remove();
+                    }
+                    
+                    $('#loadingSpinner').hide();
+                    $('#refreshIcon').show();
+                },
+                error: function(error) {
+                    console.error('Error refreshing data:', error);
+                    $('#loadingSpinner').hide();
+                    $('#refreshIcon').show();
+                }
+            });
+        }
+        
+        function loadDetailedResults(district, lgCode, lgName) {
+            $('#loadingSpinner').show();
+            $('#refreshIcon').hide();
+            
+            $.ajax({
+                url: `/get_details/${district}/${lgCode}/${lgName}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    $('#lastUpdated').text('Last updated: ' + data.last_updated);
+                    updateDetailedResultsTable(data.detailed_results);
+                    initChart(data.detailed_results);
+                    $('#lgName').text(lgName);
+                    $('#mostRecentName').text(lgName);
+                    $('#districtName').text(district);
+                    
+                    if (data.use_sample_data) {
+                        $('.alert-warning').remove();
+                        $('#alertContainer').append(`
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                <strong>Warning:</strong> Using sample data due to connection issues${data.error ? ' (' + data.error + ')' : ''}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `);
+                    } else {
+                        $('.alert-warning').remove();
+                    }
+                    
+                    $('#loadingSpinner').hide();
+                    $('#refreshIcon').show();
+                },
+                error: function(error) {
+                    console.error('Error loading detailed results:', error);
+                    $('#loadingSpinner').hide();
+                    $('#refreshIcon').show();
+                }
+            });
+        }
+        
+        function updateDetailedResultsTable(detailedResults) {
+            let tableHtml = '';
+            
+            detailedResults.forEach((party, index) => {
+                const colors = ['#d61a1a', '#00b7ff', '#00e600', '#ff8c00', '#c000c0', '#ffff00', '#00ffff', '#ff00ff', '#808080', '#a52a2a'];
+                const color = colors[index % colors.length];
+                const isWinner = index === 0;
+                
+                tableHtml += `
+                <tr class="${isWinner ? 'winner-row' : ''}">
+                    <td>
+                        <img src="${party.symbol_url}" class="party-symbol" alt="${party.party_name}">
+                        <div class="party-color" style="background-color: ${color}"></div>
+                        ${party.party_name} 
+                        <span class="text-muted">(${party.party_abbr})</span>
+                    </td>
+                    <td>${party.votes}</td>
+                    <td>${party.share}</td>
+                    <td>
+                        <span class="badge bg-primary badge-seats">${party.seats}</span>
+                    </td>
+                    <td style="width: 25%">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" 
+                                style="width: ${party.share}; background-color: ${color}" 
+                                aria-valuenow="${party.share.replace('%', '')}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="100"></div>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            });
+            
+            $('#detailedResultsTable tbody').html(tableHtml);
+        }
+        
+        function updateRecentResultsList(recentResults) {
+            let listHtml = '';
+            
+            recentResults.forEach(result => {
+                listHtml += `
+                <a href="#" class="list-group-item list-group-item-action recent-result" 
+                   data-district="${result.district}" 
+                   data-lg-code="${result.lg_code}" 
+                   data-lg-name="${result.lg_name}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${result.local_government}</h6>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-map-marker-alt me-1"></i> ${result.district}<br>
+                        <i class="fas fa-clock me-1"></i> ${result.timestamp}
+                    </small>
+                </a>
+                `;
+            });
+            
+            $('#recentResultsList').html(listHtml);
+        }
+    </script>
+</body>
+</html>

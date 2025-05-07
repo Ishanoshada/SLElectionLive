@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SL Election News Live</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #10172a;
+            --accent-color: #f97316;
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+            --background-color: #f8fafc;
+            --card-color: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--background-color);
+            padding: 0;
+            margin: 0;
+            transition: all 0.5s ease;
+        }
+
+        body.dark-mode {
+            --background-color: #0f172a;
+            --card-color: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --secondary-color: #475569;
+        }
+
+        body.fullscreen-mode {
+            overflow: hidden;
+        }
+
+        .navbar {
+            background: var(--secondary-color);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.5s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.8rem;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar-brand i {
+            color: var(--accent-color);
+        }
+
+        .live-indicator {
+            display: inline-block;
+            background-color: var(--danger-color);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .live-indicator::before {
+            content: "•";
+            margin-right: 5px;
+        }
+
+        .card {
+            background: var(--card-color);
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-bottom: 30px;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #1e40af);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header::after {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 200px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
+            transform: rotate(-45deg) translateX(-100px) translateY(-200px);
+            animation: cardHeaderShine 4s ease-in-out infinite;
+        }
+
+        @keyframes cardHeaderShine {
+            0% { transform: rotate(-45deg) translateX(-200px) translateY(-200px); }
+            30%, 100% { transform: rotate(-45deg) translateX(300px) translateY(200px); }
+        }
+
+        .news-headline {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: all 0.3s ease;
+        }
+
+        .news-meta {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .dark-mode .news-meta {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .news-meta i {
+            color: var(--primary-color);
+        }
+
+        .table {
+            color: var(--text-primary);
+            margin-bottom: 0;
+            font-size: 0.9rem;
+        }
+
+        .table th {
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding: 12px 15px;
+        }
+
+        .dark-mode .table th {
+            border-bottom: 2px solid rgba(255,255,255,0.05);
+        }
+
+        .table td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-color: rgba(0,0,0,0.03);
+        }
+
+        .dark-mode .table td {
+            border-color: rgba(255,255,255,0.03);
+        }
+
+        .winner-row {
+            background-color: rgba(34, 197, 94, 0.1);
+            font-weight: 600;
+        }
+
+        .dark-mode .winner-row {
+            background-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .party-symbol {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin-right: 10px;
+            vertical-align: middle;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            transition: all 0.4s ease;
+            border: 2px solid transparent;
+        }
+
+        .party-symbol:hover {
+            transform: scale(1.3) rotate(10deg);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-color: var(--primary-color);
+        }
+
+        .badge-seats {
+            font-size: 0.85em;
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            font-weight: 600;
+        }
+
+        .badge-seats:hover {
+            transform: scale(1.2);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        #chart, #fs-chart {
+            min-height: 250px;
+            max-width: 100%;
+            max-height: 350px;
+            transition: all 0.5s ease;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .dark-mode .chart-container {
+            background: rgba(30,41,59,0.5);
+        }
+
+        .nav-button {
+            font-weight: 600;
+            padding: 10px 18px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            min-width: 100px;
+            touch-action: manipulation;
+            font-size: 0.9rem;
+        }
+
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.5s ease;
+            z-index: -1;
+        }
+
+        .nav-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .nav-button:hover::before {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .new-result-button {
+            background: linear-gradient(135deg, var(--danger-color), #b91c1c);
+            color: white;
+            animation: attention 3s infinite;
+            border: none;
+            position: relative;
+        }
+
+        @keyframes attention {
+            0%, 100% { box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 5px 30px rgba(239, 68, 68, 0.8); }
+        }
+
+        .new-result-button::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: var(--danger-color);
+            border-radius: 50%;
+            animation: notificationPulse 1.5s infinite;
+        }
+
+        @keyframes notificationPulse {
+            0% { transform: scale(0.8); opacity: 1; }
+            70% { transform: scale(1.5); opacity: 0; }
+            100% { transform: scale(0.8); opacity: 0; }
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding: 30px 0;
+            background: var(--secondary-color);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color));
+            background-size: 200% 100%;
+            animation: gradientMove 4s linear infinite;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        .container {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert {
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            animation: slideDown 0.5s ease-in-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #loadingSpinner {
+            display: none;
+            animation: spin 1s linear infinite, float 2s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background-color: #f00;
+            border-radius: 3px;
+            opacity: 0;
+            animation: confettiDrop 4s ease-out forwards;
+            z-index: -1;
+        }
+
+        @keyframes confettiDrop {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 0.7; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .count-animation {
+            animation: countUp 2s ease-out forwards;
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fullscreen-btn, .theme-toggle, .nav-link-btn {
+            background: linear-gradient(135deg, var(--primary-color), #1e40af);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 6px 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-left: 10px;
+        }
+
+        .fullscreen-btn:hover, .theme-toggle:hover, .nav-link-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .theme-toggle {
+            background: none;
+            font-size: 1.2rem;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(30deg);
+        }
+
+        .fullscreen-content {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--background-color);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .fullscreen-card {
+            width: 90vw;
+            max-width: 1200px;
+            height: 90vh;
+            max-height: 800px;
+            margin: 0;
+            transform: none;
+            transition: none;
+        }
+
+        .fullscreen-card:hover {
+            transform: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        .fullscreen-card .card-header {
+            padding: 25px;
+            font-size: 1.4rem;
+        }
+
+        .fullscreen-card .news-headline {
+            font-size: 3rem;
+        }
+
+        .fullscreen-card .news-meta {
+            font-size: 1.1rem;
+            gap: 20px;
+        }
+
+        .fullscreen-card .table {
+            font-size: 1rem;
+        }
+
+        .fullscreen-card .table td {
+            padding: 15px;
+        }
+
+        .fullscreen-card .party-symbol {
+            width: 32px;
+            height: 32px;
+        }
+
+        .fullscreen-card .badge-seats {
+            font-size: 0.9em;
+            padding: 8px 14px;
+        }
+
+        .fullscreen-card #fs-chart {
+            min-height: 300px;
+            max-height: 400px;
+        }
+
+        .fullscreen-card .turnout-info {
+            padding: 20px;
+        }
+
+        .fullscreen-card .turnout-text {
+            font-size: 1.2rem;
+        }
+
+        .fullscreen-card .turnout-percent {
+            font-size: 1.5rem;
+        }
+
+        .close-fullscreen {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 2100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-fullscreen:hover {
+            background: rgba(0,0,0,0.7);
+            transform: scale(1.1);
+        }
+
+        .result-counter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--primary-color), #1e40af);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .turnout-info {
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .dark-mode .turnout-info {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .turnout-icon {
+            font-size: 2rem;
+            color: var(--success-color);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .turnout-text {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .turnout-percent {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--success-color);
+        }
+
+        .vote-progress {
+            height: 8px;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: rgba(0,0,0,0.05);
+            margin-top: 5px;
+        }
+
+        .dark-mode .vote-progress {
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .vote-progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--primary-color), #1e40af);
+            width: 0;
+            transition: width 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .party-trend {
+            font-size: 0.8rem;
+        }
+
+        .trend-up {
+            color: var(--success-color);
+        }
+
+        .trend-down {
+            color: var(--danger-color);
+        }
+
+        .result-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .social-share {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .social-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .twitter-btn {
+            background: #1da1f2;
+        }
+
+        .facebook-btn {
+            background: #1877f2;
+        }
+
+        .whatsapp-btn {
+            background: #25d366;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-5px) rotate(5deg);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .excitement-news {
+            position: relative;
+            background: linear-gradient(135deg, var(--primary-color), #1e40af);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            animation: slideIn 0.5s ease-in-out;
+        }
+
+        .excitement-news::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiPjxjaXJjbGUgY3g9IjEwIiBjeT0iMTAiIHI9IjIiLz48Y2lyY2xlIGN4PSIzMCIgY3k9IjEwIiByPSIyIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSIxMCIgcj0iMiIvPjxjaXJjbGUgY3g9IjcwIiBjeT0iMTAiIHI9IjIiLz48Y2lyY2xlIGN4PSI5MCIgY3k9IjEwIiByPSIyIi8+PGNpcmNsZSBjeD0iMTAiIGN5PSIzMCIgcj0iMiIvPjxjaXJjbGUgY3g9IjMwIiBjeT0iMzAiIHI9IjIiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjMwIiByPSIyIi8+PGNpcmNsZSBjeD0iNzAiIGN5PSIzMCIgcj0iMiIvPjxjaXJjbGUgY3g9IjkwIiBjeT0iMzAiIHI9IjIiLz48Y2lyY2xlIGN4PSIxMCIgY3k9IjUwIiByPSIyIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI1MCIgcj0iMiIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjIiLz48Y2lyY2xlIGN4PSI3MCIgY3k9IjUwIiByPSIyIi8+PGNpcmNsZSBjeD0iOTAiIGN5PSI1MCIgcj0iMiIvPjxjaXJjbGUgY3g9IjEwIiBjeT0iNzAiIHI9IjIiLz48Y2lyY2xlIGN4PSIzMCIgY3k9IjcwIiByPSIyIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSI3MCIgcj0iMiIvPjxjaXJjbGUgY3g9IjcwIiBjeT0iNzAiIHI9IjIiLz48Y2lyY2xlIGN4PSI5MCIgY3k9IjcwIiByPSIyIi8+PGNpcmNsZSBjeD0iMTAiIGN5PSI5MCIgcj0iMiIvPjxjaXJjbGUgY3g9IjMwIiBjeT0iOTAiIHI9IjIiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjkwIiByPSIyIi8+PGNpcmNsZSBjeD0iNzAiIGN5PSI5MCIgcj0iMiIvPjxjaXJjbGUgY3g9IjkwIiBjeT0iOTAiIHI9IjIiLz48L2c+PC9zdmc+');
+            opacity: 0.3;
+        }
+
+        .excitement-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .excitement-content {
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        .breaking-badge {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            animation: flash 2s infinite;
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .news-headline {
+                font-size: 1.6rem;
+            }
+            
+            .table {
+                font-size: 0.8rem;
+            }
+            
+            .table td {
+                padding: 8px;
+            }
+            
+            .badge-seats {
+                font-size: 0.75em;
+                padding: 3px 8px;
+            }
+            
+            .party-symbol {
+                width: 24px;
+                height: 24px;
+            }
+            
+            .nav-button {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+                min-width: 80px;
+            }
+            
+            .excitement-title {
+                font-size: 1.2rem;
+            }
+            
+            .excitement-content {
+                font-size: 0.95rem;
+            }
+            
+            .card-header {
+                padding: 15px;
+                font-size: 1.1rem;
+            }
+            
+            .result-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .social-share {
+                margin-top: 10px;
+            }
+            
+            .chart-container {
+                padding: 10px;
+            }
+            
+            #chart, #fs-chart {
+                min-height: 200px;
+                max-height: 250px;
+            }
+
+            .fullscreen-card {
+                width: 95vw;
+                height: 95vh;
+            }
+
+            .fullscreen-card .news-headline {
+                font-size: 2rem;
+            }
+
+            .fullscreen-card .table {
+                font-size: 0.85rem;
+            }
+
+            .fullscreen-card .card-header {
+                padding: 15px;
+                font-size: 1.1rem;
+            }
+
+            .fullscreen-card #fs-chart {
+                min-height: 200px;
+                max-height: 250px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar-brand {
+                font-size: 1.4rem;
+            }
+            
+            .result-counter {
+                font-size: 0.8rem;
+                padding: 4px 10px;
+            }
+            
+            .fullscreen-btn, .theme-toggle, .nav-link-btn {
+                padding: 5px 10px;
+                font-size: 0.8rem;
+            }
+            
+            .turnout-info {
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: center;
+            }
+            
+            .turnout-icon {
+                font-size: 1.5rem;
+            }
+
+            .fullscreen-card .news-headline {
+                font-size: 1.6rem;
+            }
+
+            .fullscreen-card .news-meta {
+                font-size: 0.9rem;
+            }
+
+            .fullscreen-card .table {
+                font-size: 0.75rem;
+            }
+
+            .fullscreen-card .party-symbol {
+                width: 24px;
+                height: 24px;
+            }
+
+            .fullscreen-card .badge-seats {
+                font-size: 0.75em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg mb-4">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-vote-yea me-2"></i>
+                SL Election News
+                <span class="live-indicator">LIVE</span>
+            </a>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <a class="nav-link-btn" href="/">
+                    <i class="fas fa-home me-1"></i> Dashboard
+                </a>
+                <a class="nav-link-btn" href="/sms_campaign">
+                    <i class="fas fa-sms me-1"></i> SMS Campaign
+                </a>
+                <span class="text-white me-3" id="lastUpdated">
+                    Last updated: {{ last_updated }}
+                </span>
+                <button class="btn btn-outline-light btn-sm me-2" id="manualRefresh">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh
+                </button>
+                <div class="result-counter">
+                    <i class="fas fa-chart-bar"></i>
+                    <span id="resultCount">{{ recent_results|length }} Results</span>
+                </div>
+                <button class="fullscreen-btn" id="fullscreenBtn">
+                    <i class="fas fa-expand"></i> Fullscreen
+                </button>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="alertContainer">
+            {% if error %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong><i class="fas fa-exclamation-triangle me-2"></i>Warning:</strong> Using sample data due to connection issues ({{ error }})
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="excitement-news">
+            <div class="excitement-title">
+                <span class="breaking-badge">BREAKING</span> Election Excitement Builds!
+            </div>
+            <p class="excitement-content">Record turnout reported across multiple districts as counting continues. Results streaming in show surprising shifts in voter patterns!</p>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <i class="fas fa-newspaper me-2"></i>Election Results
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span id="updateCountdown">Next update in 30s</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h1 class="news-headline" id="lgName">{{ most_recent.local_government }}</h1>
+                        <div class="news-meta">
+                            <span>
+                                <i class="fas fa-map-marker-alt me-1"></i> District: <span id="districtName">{{ most_recent.district }}</span>
+                            </span>
+                            <span>
+                                <i class="fas fa-clock me-1"></i> Published: <span id="timestamp">{{ most_recent.timestamp }}</span>
+                            </span>
+                        </div>
+
+                        <div class="turnout-info">
+                            <div class="turnout-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <div class="turnout-text">Voter Turnout: <span class="turnout-percent" id="turnoutPercent">76.4%</span></div>
+                                <div class="vote-progress">
+                                    <div class="vote-progress-bar" style="width: 0;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <div class="chart-container">
+                                    <canvas id="chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="detailedResultsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Party</th>
+                                                <th>Votes</th>
+                                                <th>Share</th>
+                                                <th>Seats</th>
+                                                <th>Trend</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if detailed_results %}
+                                            {% for party in detailed_results %}
+                                            <tr class="{{ 'winner-row' if loop.index == 1 else '' }}">
+                                                <td>
+                                                    <img src="{{ party.symbol_url }}" class="party-symbol" alt="{{ party.party_name }}">
+                                                    {{ party.party_name }} 
+                                                    <span class="text-muted">({{ party.party_abbr }})</span>
+                                                </td>
+                                                <td class="count-animation">{{ party.votes }}</td>
+                                                <td>{{ party.share }}</td>
+                                                <td>
+                                                    <span class="badge bg-primary badge-seats">{{ party.seats }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="party-trend {{ 'trend-up' if loop.index == 1 or loop.index == 3 else 'trend-down' }}">
+                                                        <i class="fas {{ 'fa-arrow-up' if loop.index == 1 or loop.index == 3 else 'fa-arrow-down' }}"></i>
+                                                        {{ "2.3%" if loop.index == 1 else "1.5%" if loop.index == 3 else "0.8%" }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">No results available</td>
+                                            </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="result-controls">
+                            <div class="control-buttons">
+                                <button class="nav-button btn btn-outline-primary" id="prevButton" {{ 'disabled' if current_index == 0 else '' }}>
+                                    <i class="fas fa-arrow-left me-1"></i> Previous
+                                </button>
+                                <button class="nav-button btn btn-danger new-result-button d-none" id="newResultButton">
+                                    New Result <i class="fas fa-bolt ms-1"></i>
+                                </button>
+                                <button class="nav-button btn btn-outline-primary" id="nextButton" {{ 'disabled' if current_index == recent_results|length - 1 else '' }}>
+                                    Next <i class="fas fa-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="social-share">
+                                <span class="text-muted me-2">Share:</span>
+                                <a href="#" class="social-btn twitter-btn" id="twitterShare">
+                                    <i class="fab fa-twitter"></i>
+                                </a>
+                                <a href="#" class="social-btn facebook-btn" id="facebookShare">
+                                    <i class="fab fa-facebook-f"></i>
+                                </a>
+                                <a href="#" class="social-btn whatsapp-btn" id="whatsappShare">
+                                    <i class="fab fa-whatsapp"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Mode Container -->
+    <div class="fullscreen-content" id="fullscreenContent">
+        <button class="close-fullscreen" id="closeFullscreen">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="card fullscreen-card">
+            <div class="card-header">
+                <div>
+                    <i class="fas fa-newspaper me-2"></i>Election Results
+                    <span class="live-indicator ms-3">LIVE</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="control-buttons">
+                        <button class="nav-button btn btn-outline-light btn-sm" id="fs-prevButton" {{ 'disabled' if current_index == 0 else '' }}>
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <button class="nav-button btn btn-danger new-result-button btn-sm d-none" id="fs-newResultButton">
+                            <i class="fas fa-bolt"></i>
+                        </button>
+                        <button class="nav-button btn btn-outline-light btn-sm" id="fs-nextButton" {{ 'disabled' if current_index == recent_results|length - 1 else '' }}>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <span id="fs-updateCountdown">Next update in 30s</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h1 class="news-headline" id="fs-lgName">{{ most_recent.local_government }}</h1>
+                <div class="news-meta">
+                    <span>
+                        <i class="fas fa-map-marker-alt me-1"></i> District: <span id="fs-districtName">{{ most_recent.district }}</span>
+                    </span>
+                    <span>
+                        <i class="fas fa-clock me-1"></i> Published: <span id="fs-timestamp">{{ most_recent.timestamp }}</span>
+                    </span>
+                </div>
+
+                <div class="turnout-info">
+                    <div class="turnout-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="turnout-text">Voter Turnout: <span class="turnout-percent" id="fs-turnoutPercent">76.4%</span></div>
+                        <div class="vote-progress">
+                            <div class="vote-progress-bar" style="width: 0;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-lg-6">
+                        <div class="chart-container">
+                            <canvas id="fs-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="fs-detailedResultsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Party</th>
+                                        <th>Votes</th>
+                                        <th>Share</th>
+                                        <th>Seats</th>
+                                        <th>Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if detailed_results %}
+                                    {% for party in detailed_results %}
+                                    <tr class="{{ 'winner-row' if loop.index == 1 else '' }}">
+                                        <td>
+                                            <img src="{{ party.symbol_url }}" class="party-symbol" alt="{{ party.party_name }}">
+                                            {{ party.party_name }} 
+                                            <span class="text-muted">({{ party.party_abbr }})</span>
+                                        </td>
+                                        <td class="count-animation">{{ party.votes }}</td>
+                                        <td>{{ party.share }}</td>
+                                        <td>
+                                            <span class="badge bg-primary badge-seats">{{ party.seats }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="party-trend {{ 'trend-up' if loop.index == 1 or loop.index == 3 else 'trend-down' }}">
+                                                <i class="fas {{ 'fa-arrow-up' if loop.index == 1 or loop.index == 3 else 'fa-arrow-down' }}"></i>
+                                                {{ "2.3%" if loop.index == 1 else "1.5%" if loop.index == 3 else "0.8%" }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">No results available</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer mt-5">
+        <div class="container text-center">
+            <p>Sri Lanka Election News © 2025</p>
+            <p class="mb-0">Data sourced from results.elections.gov.lk</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        let myChart, fsChart;
+        let currentIndex = {{ current_index }};
+        let totalResults = {{ recent_results|length }};
+        let updateCountdown = 30;
+        let countdownInterval;
+        let turnoutPercent = 76.4;
+        let confettiColors = ['#ff3333', '#33ff33', '#3333ff', '#ffff33', '#ff33ff', '#33ffff'];
+        let isRefreshing = false;
+        let currentResult = {
+            local_government: '{{ most_recent.local_government }}',
+            district: '{{ most_recent.district }}',
+            timestamp: '{{ most_recent.timestamp }}'
+        };
+
+        // Initialize the page
+        $(document).ready(function() {
+            // Initialize charts
+            initChart({{ detailed_results|tojson }}, 'chart');
+            initChart({{ detailed_results|tojson }}, 'fs-chart');
+            
+            // Start countdown timer
+            startCountdown();
+            
+            // Set up auto-refresh
+            setInterval(() => {
+                if (!isRefreshing) {
+                    refreshData();
+                }
+            }, 30000);
+            
+            // Initialize turnout progress bar
+            setTimeout(() => {
+                $('.vote-progress-bar').css('width', turnoutPercent + '%');
+            }, 500);
+            
+            // Create confetti effect
+            createConfetti(30);
+
+            // Event handlers
+            $('#manualRefresh').click(function() {
+                if (!isRefreshing) {
+                    $(this).addClass('disabled');
+                    $(this).html('<i class="fas fa-spinner fa-spin"></i> Refreshing...');
+                    refreshData();
+                    setTimeout(() => {
+                        $(this).removeClass('disabled');
+                        $(this).html('<i class="fas fa-sync-alt me-1"></i> Refresh');
+                    }, 1000);
+                }
+            });
+            
+            $('#prevButton, #fs-prevButton').click(function() {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    refreshData();
+                }
+            });
+            
+            $('#nextButton, #fs-nextButton').click(function() {
+                if (currentIndex < totalResults - 1) {
+                    currentIndex++;
+                    refreshData();
+                }
+            });
+            
+            $('#newResultButton, #fs-newResultButton').click(function() {
+                currentIndex = 0;
+                refreshData();
+                createConfetti(50);
+            });
+            
+            // Theme toggle
+            $('#themeToggle').click(function() {
+                $('body').toggleClass('dark-mode');
+                const icon = $(this).find('i');
+                if (icon.hasClass('fa-moon')) {
+                    icon.removeClass('fa-moon').addClass('fa-sun');
+                } else {
+                    icon.removeClass('fa-sun').addClass('fa-moon');
+                }
+                // Update chart colors
+                if (myChart) myChart.options.plugins.legend.labels.color = $('body').hasClass('dark-mode') ? '#f1f5f9' : '#1e293b';
+                if (fsChart) fsChart.options.plugins.legend.labels.color = $('body').hasClass('dark-mode') ? '#f1f5f9' : '#1e293b';
+                myChart?.update();
+                fsChart?.update();
+            });
+            
+            // Fullscreen mode
+            $('#fullscreenBtn').click(function() {
+                $('body').addClass('fullscreen-mode');
+                $('#fullscreenContent').fadeIn(300);
+                initChart({{ detailed_results|tojson }}, 'fs-chart');
+            });
+            
+            $('#closeFullscreen').click(function() {
+                $('body').removeClass('fullscreen-mode');
+                $('#fullscreenContent').fadeOut(300);
+            });
+            
+            // Social share buttons
+            updateSocialShareLinks();
+            $('.social-btn').click(function(e) {
+                e.preventDefault();
+                window.open($(this).attr('href'), '_blank', 'width=600,height=400');
+            });
+        });
+
+        // Initialize chart
+        function initChart(data, chartId) {
+            if (!Array.isArray(data) || data.length === 0) {
+                console.error('Invalid or empty data for chart');
+                $(`#${chartId}`).parent().html('<div class="text-center text-muted p-3">No chart data available</div>');
+                return;
+            }
+            
+            const ctx = document.getElementById(chartId).getContext('2d');
+            
+            if (chartId === 'chart' && myChart) {
+                myChart.destroy();
+            } else if (chartId === 'fs-chart' && fsChart) {
+                fsChart.destroy();
+            }
+            
+            const topParties = data.slice(0, 5);
+            const colors = ['#ef4444', '#3b82f6', '#22c55e', '#f97316', '#a855f7'];
+            
+            const chartConfig = {
+                type: 'doughnut',
+                data: {
+                    labels: topParties.map(party => party.party_abbr),
+                    datasets: [{
+                        data: topParties.map(party => parseFloat(party.share.replace('%', ''))),
+                        backgroundColor: colors,
+                        borderWidth: 1,
+                        borderColor: '#ffffff',
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: chartId === 'fs-chart' ? 14 : 12,
+                                    weight: '600'
+                                },
+                                padding: 20,
+                                color: $('body').hasClass('dark-mode') ? '#f1f5f9' : '#1e293b'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const party = topParties[context.dataIndex];
+                                    return `${party.party_name}: ${party.share} (${party.seats} seats)`;
+                                }
+                            },
+                            padding: 12,
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            borderWidth: 1,
+                            borderColor: 'rgba(255,255,255,0.2)'
+                        }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 2000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            };
+            
+            if (chartId === 'chart') {
+                myChart = new Chart(ctx, chartConfig);
+            } else {
+                fsChart = new Chart(ctx, chartConfig);
+            }
+        }
+
+        // Refresh data
+        function refreshData() {
+            if (isRefreshing) return;
+            isRefreshing = true;
+            
+            $.ajax({
+                url: '/news_refresh',
+                type: 'GET',
+                data: { current_index: currentIndex },
+                dataType: 'json',
+                timeout: 10000,
+                success: function(data) {
+                    // Update last updated timestamp
+                    $('#lastUpdated').text('Last updated: ' + data.last_updated);
+                    
+                    // Update current result for sharing
+                    currentResult = {
+                        local_government: data.current_result.local_government,
+                        district: data.current_result.district,
+                        timestamp: data.current_result.timestamp
+                    };
+                    
+                    // Update main content
+                    updateMainContent(data);
+                    
+                    // Update fullscreen content if visible
+                    if ($('#fullscreenContent').is(':visible')) {
+                        updateFullscreenContent(data);
+                    }
+                    
+                    // Update turnout with animation
+                    updateTurnout();
+                    
+                    // Reset countdown
+                    updateCountdown = 30;
+                    startCountdown();
+                    
+                    // Update button states
+                    updateButtonStates(data);
+                    
+                    // Update social share links
+                    updateSocialShareLinks();
+                    
+                    // Show/hide alerts
+                    updateAlerts(data);
+                    
+                    // Animate counts
+                    animateCounts();
+                    
+                    isRefreshing = false;
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error refreshing news data:', error);
+                    showErrorAlert('Failed to refresh data. Please try again later.');
+                    isRefreshing = false;
+                    startCountdown();
+                }
+            });
+        }
+
+        // Update main content
+        function updateMainContent(data) {
+            $('#lgName').text(data.current_result.local_government || 'N/A');
+            $('#districtName').text(data.current_result.district || 'N/A');
+            $('#timestamp').text(data.current_result.timestamp || 'N/A');
+            $('#resultCount').text(data.recent_results.length + ' Results');
+            
+            updateDetailedResultsTable(data.detailed_results, 'detailedResultsTable');
+            initChart(data.detailed_results, 'chart');
+            
+            totalResults = data.recent_results.length;
+            currentIndex = data.current_index;
+        }
+
+        // Update fullscreen content
+        function updateFullscreenContent(data) {
+            $('#fs-lgName').text(data.current_result.local_government || 'N/A');
+            $('#fs-districtName').text(data.current_result.district || 'N/A');
+            $('#fs-timestamp').text(data.current_result.timestamp || 'N/A');
+            
+            updateDetailedResultsTable(data.detailed_results, 'fs-detailedResultsTable');
+            initChart(data.detailed_results, 'fs-chart');
+        }
+
+        // Update detailed results table
+        function updateDetailedResultsTable(detailedResults, tableId) {
+            let tableHtml = '';
+            
+            if (!detailedResults || detailedResults.length === 0) {
+                tableHtml = '<tr><td colspan="5" class="text-center text-muted">No results available</td></tr>';
+            } else {
+                detailedResults.forEach((party, index) => {
+                    const isWinner = index === 0;
+                    const trendDirection = index === 0 || index === 2 ? 'trend-up' : 'trend-down';
+                    const trendIcon = index === 0 || index === 2 ? 'fa-arrow-up' : 'fa-arrow-down';
+                    const trendValue = index === 0 ? '2.3%' : index === 2 ? '1.5%' : '0.8%';
+                    
+                    tableHtml += `
+                    <tr class="${isWinner ? 'winner-row' : ''}">
+                        <td>
+                            <img src="${party.symbol_url}" class="party-symbol" alt="${party.party_name}">
+                            ${party.party_name} 
+                            <span class="text-muted">(${party.party_abbr})</span>
+                        </td>
+                        <td class="count-animation">${party.votes}</td>
+                        <td>${party.share}</td>
+                        <td>
+                            <span class="badge bg-primary badge-seats">${party.seats}</span>
+                        </td>
+                        <td>
+                            <span class="party-trend ${trendDirection}">
+                                <i class="fas ${trendIcon}"></i>
+                                ${trendValue}
+                            </span>
+                        </td>
+                    </tr>
+                    `;
+                });
+            }
+            
+            $(`#${tableId} tbody`).html(tableHtml);
+        }
+
+        // Update button states
+        function updateButtonStates(data) {
+            $('#prevButton, #fs-prevButton').prop('disabled', currentIndex === 0);
+            $('#nextButton, #fs-nextButton').prop('disabled', currentIndex === totalResults - 1);
+            
+            if (data.new_results && data.new_results.length > 0) {
+                $('#newResultButton, #fs-newResultButton').removeClass('d-none');
+            } else {
+                $('#newResultButton, #fs-newResultButton').addClass('d-none');
+            }
+        }
+
+        // Show error alert
+        function showErrorAlert(message) {
+            $('.alert-warning').remove();
+            $('#alertContainer').append(`
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <strong><i class="fas fa-exclamation-triangle me-2"></i>Warning:</strong> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `);
+        }
+
+ mississippi: function updateAlerts(data) {
+            if (data.use_sample_data) {
+                $('.alert-warning').remove();
+                $('#alertContainer').append(`
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <strong><i class="fas fa-exclamation-triangle me-2"></i>Warning:</strong> Using sample data due to connection issues${data.error ? ' (' + data.error + ')' : ''}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `);
+            } else {
+                $('.alert-warning').remove();
+            }
+        }
+
+        // Start countdown timer
+        function startCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            
+            updateCountdown = 30;
+            
+            countdownInterval = setInterval(() => {
+                updateCountdown--;
+                $('#updateCountdown, #fs-updateCountdown').text(`Next update in ${updateCountdown}s`);
+                
+                if (updateCountdown <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+
+        // Update turnout with animation
+        function updateTurnout() {
+            const newTurnout = Math.round((Math.random() * 5 + 74) * 10) / 10;
+            
+            $({percent: turnoutPercent}).animate({percent: newTurnout}, {
+                duration: 1500,
+                step: function() {
+                    const formattedPercent = this.percent.toFixed(1);
+                    $('#turnoutPercent, #fs-turnoutPercent').text(formattedPercent + '%');
+                    $('.vote-progress-bar').css('width', formattedPercent + '%');
+                },
+                complete: function() {
+                    turnoutPercent = newTurnout;
+                }
+            });
+        }
+
+        // Animate counts
+        function animateCounts() {
+            $('.count-animation').each(function() {
+                $(this).addClass('count-animation');
+                setTimeout(() => {
+                    $(this).removeClass('count-animation');
+                }, 2000);
+            });
+        }
+
+        // Update social share links
+        function updateSocialShareLinks() {
+            const shareText = encodeURIComponent(`Latest election results for ${currentResult.local_government}, ${currentResult.district} - ${currentResult.timestamp}`);
+            const shareUrl = encodeURIComponent(window.location.href);
+            
+            $('#twitterShare').attr('href', `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`);
+            $('#facebookShare').attr('href', `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${shareText}`);
+            $('#whatsappShare').attr('href', `https://api.whatsapp.com/send?text=${shareText}%20${shareUrl}`);
+        }
+
+        // Create confetti effect
+        function createConfetti(count) {
+            if (window.innerWidth < 768) count = Math.floor(count / 2); // Reduce confetti on mobile
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => createConfettiPiece(), i * 50);
+            }
+        }
+
+        // Create a single confetti piece
+        function createConfettiPiece() {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            
+            const size = Math.random() * 6 + 4;
+            const colorIndex = Math.floor(Math.random() * confettiColors.length);
+            const left = Math.random() * 100;
+            const animationDuration = Math.random() * 2 + 2;
+            const opacity = Math.random() * 0.5 + 0.3;
+            
+            confetti.style.width = size + 'px';
+            confetti.style.height = size + 'px';
+            confetti.style.backgroundColor = confettiColors[colorIndex];
+            confetti.style.left = left + 'vw';
+            confetti.style.animationDuration = animationDuration + 's';
+            confetti.style.opacity = opacity;
+            
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => {
+                confetti.remove();
+            }, animationDuration * 1000);
+        }
+    </script>
+</body>
+</html>

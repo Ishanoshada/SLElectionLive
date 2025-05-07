@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Campaign - Sri Lanka Election Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            border: none;
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            perspective: 1000px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        .card:hover {
+            transform: translateY(-8px) scale(1.01) rotateX(2deg);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+        }
+        .card-header {
+            background-color: #002D62;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+        .card-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        .card:hover .card-header::after {
+            transform: translateX(100%);
+        }
+        .footer {
+            margin-top: 30px;
+            padding: 20px 0;
+            background-color: #002D62;
+            color: white;
+        }
+        #sendButton {
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        #sendButton:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.25);
+        }
+        #sendButton:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        .alert {
+            margin-bottom: 15px;
+            animation: slideIn 0.5s ease-in-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .navbar {
+            transform-style: preserve-3d;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .navbar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .container {
+            animation: pageLoad 0.8s ease-out forwards;
+        }
+        @keyframes pageLoad {
+            0% { 
+                opacity: 0; 
+                transform: translateY(20px) scale(0.98); 
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+        @media (max-width: 768px) {
+            .card-header {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 rounded">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    <i class="fas fa-vote-yea me-2"></i>
+                    Sri Lanka Election Results
+                </a>
+                <div class="d-flex align-items-center">
+                    <a class="btn btn-sm btn-outline-light me-2" href="/">
+                        <i class="fas fa-home me-1"></i> Dashboard
+                    </a>
+                    <span class="navbar-text">
+                        Last updated: {{ last_updated }}
+                    </span>
+                </div>
+            </div>
+        </nav>
+
+        <div id="alertContainer">
+            {% if error %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong>Warning:</strong> Using sample data due to connection issues ({{ error }})
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-sms me-2"></i>SMS Campaign
+                    </div>
+                    <div class="card-body">
+                        <form id="smsCampaignForm">
+                            <div class="mb-3">
+                                <label for="lg_name" class="form-label">Select Election Result</label>
+                                <select class="form-select" id="lg_name" name="lg_name" required>
+                                    <option value="" disabled selected>Select an election</option>
+                                    {% for result in recent_results %}
+                                    <option value="{{ result.lg_name }}">{{ result.local_government }} ({{ result.district }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone_numbers" class="form-label">Phone Numbers (comma-separated, e.g., +94712345678,+94787654321)</label>
+                                <textarea class="form-control" id="phone_numbers" name="phone_numbers" rows="4" placeholder="Enter phone numbers in +94xxxxxxxxx format" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="sendButton">
+                                <i class="fas fa-paper-plane me-1"></i> Send SMS
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer mt-5">
+        <div class="container text-center">
+            <p>Sri Lanka Election Results Dashboard © 2025</p>
+            <p class="mb-0">Data sourced from results.elections.gov.lk</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#smsCampaignForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                $.ajax({
+                    url: '/send_sms_campaign',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    dataType: 'json',
+                    success: function(response) {
+                        $('#alertContainer').empty();
+                        if (response.success) {
+                            $('#alertContainer').append(`
+                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    <strong>Success!</strong> ${response.message}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            `);
+                            $('#smsCampaignForm')[0].reset();
+                        } else {
+                            $('#alertContainer').append(`
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <strong>Error:</strong> ${response.message}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            `);
+                        }
+                    },
+                    error: function(error) {
+                        $('#alertContainer').empty().append(`
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>Error:</strong> Failed to send SMS campaign
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `);
+                        console.error('Error sending SMS campaign:', error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
